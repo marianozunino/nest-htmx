@@ -1,21 +1,16 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TsxViewsModule } from 'nestjs-tsx-views';
 
 import SQLite from 'better-sqlite3';
 
-import { resolve } from 'path';
 import { KyselyModule } from 'nestjs-kysely';
 import { SqliteDialect } from 'kysely';
+import { RenderInterceptor } from './render.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
-    TsxViewsModule.register({
-      viewsDirectory: resolve(__dirname, './views'),
-      prettify: true,
-      forRoutes: [AppController],
-    }),
     KyselyModule.forRoot({
       dialect: new SqliteDialect({
         database: new SQLite(':memory:'),
@@ -23,6 +18,9 @@ import { SqliteDialect } from 'kysely';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_INTERCEPTOR, useClass: RenderInterceptor },
+  ],
 })
 export class AppModule {}

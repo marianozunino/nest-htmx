@@ -1,18 +1,21 @@
 {
   "compilerOptions": {
-"baseUrl": ".",
+    "baseUrl": ".",
     "declaration": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": true,
-    "jsx": "react",
     "module": "commonjs",
     "outDir": "./dist",
     "sourceMap": true,
     "strict": true,
     "strictPropertyInitialization": true,
-    "target": "es2019"
+    "target": "esnext",
+    "jsx": "react",
+    "jsxFactory": "Html.createElement",
+    "jsxFragmentFactory": "Html.Fragment",
+    "plugins": [{ "name": "@kitajs/ts-html-plugin" }]
   }
 }
