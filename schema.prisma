@@ -1,0 +1,268 @@
+generator kysely {
+  provider = "prisma-kysely"
+
+  // Optionally provide a destination directory for the generated file
+  // and a filename of your choice
+  output       = "./src/db"
+  fileName     = "types.ts"
+  // Optionally generate runtime enums to a separate file
+  enumFileName = "enums.ts"
+  camelCase    = true
+  readOnlyIds  = true
+}
+
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Accommodation {
+  id             Int                  @id @default(autoincrement()) @map(name: "id")
+  name           String               @map(name: "name")
+  description    String               @map(name: "description")
+  price          String               @map(name: "price")
+  availableRooms Int                  @map(name: "available_rooms")
+  startDate      DateTime             @map(name: "start_date")
+  endDate        DateTime             @map(name: "end_date")
+  provider       AccommodationCompany @relation(fields: [providerId], references: [id])
+  providerId     Int                  @map(name: "provider_id")
+  Event          Event?               @relation(fields: [eventId], references: [id])
+  eventId        Int?                 @map(name: "event_id")
+  Registration   Registration[]
+
+  @@map(name: "accommodations")
+}
+
+model AccommodationCompany {
+  id             Int             @id @default(autoincrement()) @map(name: "id")
+  name           String          @map(name: "name")
+  address        String          @map(name: "address")
+  city           String          @map(name: "city")
+  state          String          @map(name: "state")
+  country        String          @map(name: "country")
+  phone          String          @map(name: "phone")
+  accommodations Accommodation[]
+
+  @@map(name: "accommodation_companies")
+}
+
+model Event {
+  id          Int      @id @default(autoincrement()) @map(name: "id")
+  name        String   @map(name: "name")
+  address     String   @map(name: "address")
+  city        String   @map(name: "city")
+  state       String   @map(name: "state")
+  country     String   @map(name: "country")
+  startDate   DateTime @map(name: "start_date")
+  endDate     DateTime @map(name: "end_date")
+  externalURL String   @map(name: "external_url")
+  enabled     Boolean  @map(name: "enabled")
+
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId Int      @map(name: "customer_id")
+
+  discounts      Discount[]
+  accommodations Accommodation[]
+  transfers      Transfer[]
+  activities     Activity[]
+  stepsConfig    String          @default("{}") @map(name: "steps_config")
+  Registration   Registration[]
+
+  @@map(name: "events")
+}
+
+model Activity {
+  id            Int      @id @default(autoincrement()) @map(name: "id")
+  name          String   @map(name: "name")
+  description   String   @map(name: "description")
+  maxAttendance Int      @map(name: "max_attendance")
+  date          DateTime @map(name: "date")
+  enabled       Boolean  @map(name: "enabled")
+
+  event   Event? @relation(fields: [eventId], references: [id])
+  eventId Int?   @map(name: "event_id")
+
+  Registration   Registration? @relation(fields: [registrationId], references: [id])
+  registrationId Int?          @map(name: "registration_id")
+
+  courses CourseOnActivity[]
+  tiers   ActivityTier[]
+
+  @@map(name: "activities")
+}
+
+model Course {
+  id            Int    @id @default(autoincrement()) @map(name: "id")
+  name          String @map(name: "name")
+  description   String @map(name: "description")
+  maxAttendance Int    @map(name: "max_attendance")
+
+  activities CourseOnActivity[]
+
+  courseTiers    CourseTier[]
+  Registration   Registration? @relation(fields: [registrationId], references: [id])
+  registrationId Int?          @map(name: "registration_id")
+
+  @@map(name: "courses")
+}
+
+model CourseOnActivity {
+  activity   Activity @relation(fields: [activityId], references: [id])
+  course     Course   @relation(fields: [courseId], references: [id])
+  activityId Int      @map(name: "activity_id")
+  courseId   Int      @map(name: "course_id")
+
+  @@id([activityId, courseId])
+  @@map(name: "courses_on_activities")
+}
+
+model ActivityTier {
+  id         Int       @id @default(autoincrement()) @map(name: "id")
+  price      Int       @map(name: "price")
+  label      String    @map(name: "label")
+  Activity   Activity? @relation(fields: [activityId], references: [id])
+  activityId Int?      @map(name: "activity_id")
+
+  @@map(name: "activity_tiers")
+}
+
+model CourseTier {
+  id       Int     @id @default(autoincrement()) @map(name: "id")
+  price    Int     @map(name: "price")
+  label    String  @map(name: "label")
+  Course   Course? @relation(fields: [courseId], references: [id])
+  courseId Int?    @map(name: "course_id")
+
+  @@map(name: "course_tiers")
+}
+
+model Customer {
+  id      Int     @id @default(autoincrement()) @map(name: "id")
+  name    String  @map(name: "name")
+  address String  @map(name: "address")
+  state   String  @map(name: "state")
+  country String  @map(name: "country")
+  events  Event[]
+
+  @@map(name: "customers")
+}
+
+model Discount {
+  id          Int       @id @default(autoincrement()) @map(name: "id")
+  maxRedeems  Int       @map(name: "max_redeems")
+  validUntil  DateTime? @map(name: "valid_until")
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id])
+  event       Event     @relation(fields: [eventId], references: [id])
+  promoCodeId Int       @map(name: "promo_code_id")
+  eventId     Int       @map(name: "event_id")
+
+  @@map(name: "discounts")
+}
+
+model PromoCode {
+  id        Int        @id @default(autoincrement()) @map(name: "id")
+  name      String     @map(name: "name")
+  code      String     @map(name: "code")
+  discounts Discount[]
+
+  @@map(name: "promo_codes")
+}
+
+model Payment {
+  id            Int      @id @default(autoincrement()) @map(name: "id")
+  paymentMethod String   @map(name: "payment_method")
+  paymentDate   DateTime @map(name: "payment_date")
+  invoiceNumber String   @map(name: "invoice_number")
+  status        String   @map(name: "status")
+
+  Registration Registration?
+
+  @@map(name: "payments")
+}
+
+model Registration {
+  id                 Int               @id @default(autoincrement()) @map(name: "id")
+  registrationDate   DateTime          @map(name: "registration_date")
+  totalPrice         Int               @map(name: "total_price")
+  attendee           Attendee          @relation(fields: [attendeeId], references: [id])
+  event              Event             @relation(fields: [eventId], references: [id])
+  activities         Activity[]
+  courses            Course[]
+  accommodation      Accommodation     @relation(fields: [accommodationId], references: [id])
+  transfer           Transfer          @relation(fields: [transferId], references: [id])
+  dietaryConstraints DietaryConstraint @relation(fields: [dietaryConstraintId], references: [id])
+  payment            Payment           @relation(fields: [paymentId], references: [id])
+
+  attendeeId          Int @map(name: "attendee_id")
+  eventId             Int @map(name: "event_id")
+  accommodationId     Int @map(name: "accommodation_id")
+  transferId          Int @map(name: "transfer_id")
+  dietaryConstraintId Int @unique @map(name: "dietary_constraint_id")
+  paymentId           Int @unique @map(name: "payment_id")
+
+  @@map(name: "registrations")
+}
+
+model Attendee {
+  id            Int            @id @default(autoincrement()) @map(name: "id")
+  username      String         @map(name: "username")
+  password      String         @map(name: "password")
+  firstname     String         @map(name: "firstname")
+  surname       String         @map(name: "surname")
+  idType        String         @map(name: "id_type")
+  idCode        String         @map(name: "id_code")
+  birthdate     DateTime?      @map(name: "birthdate")
+  email         String?        @map(name: "email")
+  phone         String?        @map(name: "phone")
+  profession    String?        @map(name: "profession")
+  company       String?        @map(name: "company")
+  photoURL      String?        @map(name: "photo_url")
+  registrations Registration[]
+
+  @@map(name: "attendees")
+}
+
+model DietaryConstraint {
+  id          Int    @id @default(autoincrement()) @map(name: "id")
+  name        String @map(name: "name")
+  description String @map(name: "description")
+
+  registration Registration?
+
+  @@map(name: "dietary_constraints")
+}
+
+model Transfer {
+  id             Int             @id @default(autoincrement()) @map(name: "id")
+  name           String          @map(name: "name")
+  description    String          @map(name: "description")
+  price          String          @map(name: "price")
+  availableRooms Int             @map(name: "available_rooms")
+  departureDate  DateTime        @map(name: "departure_date")
+  returnDate     DateTime        @map(name: "return_date")
+  provider       TransferCompany @relation(fields: [providerId], references: [id])
+  providerId     Int             @unique @map(name: "provider_id")
+  Event          Event?          @relation(fields: [eventId], references: [id])
+  eventId        Int?            @map(name: "event_id")
+  Registration   Registration[]
+
+  @@map(name: "transfers")
+}
+
+model TransferCompany {
+  id        Int        @id @default(autoincrement()) @map(name: "id")
+  name      String     @map(name: "name")
+  address   String     @map(name: "address")
+  city      String     @map(name: "city")
+  state     String     @map(name: "state")
+  country   String     @map(name: "country")
+  phone     String     @map(name: "phone")
+  transfers Transfer[]
+
+  @@map(name: "transfer_companies")
+}
